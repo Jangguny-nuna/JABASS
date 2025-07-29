@@ -1,5 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
+=<!DOCTYPE html>
+<html lang="ko">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -23,160 +23,228 @@
       align-items: center;
       justify-content: flex-start;
       min-height: 100vh;
-    }
-
-    h1 {
-      font-size: 1.2rem;
-      margin-top: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    h1::before {
-      content: '❤️';
-    }
-
-    h1::after {
-      content: '🍀';
-    }
-
-    #noteDisplay {
-      font-size: 2.2rem;
-      margin: 1.2rem 0 0.3rem 0;
-      color: #00bfff;
-      font-family: sans-serif;
-      word-break: keep-all;
       text-align: center;
     }
 
+    h1 {
+      font-size: 1.4rem;
+      margin: 1rem 0 0.5rem;
+    }
+
+    #noteDisplay {
+      font-size: 2rem;
+      margin: 0.8rem 0 0.2rem 0;
+      color: #00ffff;
+      font-family: sans-serif;
+    }
+
     .string-label {
-      font-size: 1.1rem;
+      font-size: 1rem;
       color: #ffd700;
       margin-bottom: 0.5rem;
       font-family: sans-serif;
     }
 
-    .menu {
+    .menu, .type-menu, .mode-menu, .interval-menu {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
       gap: 8px;
-      margin: 0.5rem 0;
+      margin: 0.4rem 0;
     }
 
-    .menu button, #pauseBtn, #modeBtn {
+    .menu button, .type-menu button, .mode-menu button, .interval-menu button, #pauseBtn {
       font-family: 'DungGeunMo';
-      background-color: #222;
+      background-color: #333;
       color: #fff;
-      border: 1px solid #555;
-      padding: 0.5rem 0.8rem;
+      border: 1px solid #777;
+      padding: 0.4rem 0.7rem;
       border-radius: 6px;
       cursor: pointer;
     }
 
-    .menu button.active {
-      background-color: #444;
-    }
-
-    #pauseBtn, #modeBtn {
-      margin: 0.3rem;
+    button.active {
+      background-color: #00aaff;
+      color: #000;
     }
 
     @media (max-width: 600px) {
       #noteDisplay {
-        font-size: 1.8rem;
+        font-size: 1.6rem;
       }
 
       .string-label {
-        font-size: 0.95rem;
+        font-size: 0.9rem;
       }
     }
   </style>
 </head>
 <body>
-  <h1>베이스 지판 정복하기</h1>
+  <h1>🍀 BASS 지판 정복하기! 🍀</h1>
+
+  <div class="menu">
+    <button onclick="setMode('chord')" id="chordBtn">코드 탐색</button>
+    <button onclick="setMode('note')" id="noteBtn">음 탐색</button>
+  </div>
+
   <div id="noteDisplay">🎵</div>
   <div class="string-label" id="stringLabel"></div>
 
-  <div>
-    <button id="pauseBtn" onclick="togglePause()">⏯</button>
-    <button id="modeBtn" onclick="toggleMode()">🔀</button>
+  <div class="type-menu" id="typeMenu"></div>
+
+  <div class="interval-menu">
+    <button onclick="setIntervalTime(2000)">2초</button>
+    <button onclick="setIntervalTime(3000)">3초</button>
+    <button class="active" onclick="setIntervalTime(5000)">5초</button>
+    <button onclick="setIntervalTime(7000)">7초</button>
   </div>
 
-  <div class="menu">
-    <button onclick="setScale('major')">Major</button>
-    <button onclick="setScale('minor')">Minor</button>
-    <button onclick="setScale('flat')">Flat</button>
+  <div class="mode-menu">
+    <button onclick="setOrder('sequential')">순서대로</button>
+    <button class="active" onclick="setOrder('random')">랜덤</button>
+    <button id="pauseBtn" onclick="togglePause()">⏯</button>
   </div>
 
   <script>
-    const notes = {
-      major: ['Cmaj7', 'Dmaj7', 'Emaj7', 'Fmaj7', 'Gmaj7', 'Amaj7', 'Bmaj7'],
-      minor: ['Cm7', 'Dm7', 'Em7', 'Fm7', 'Gm7', 'Am7', 'Bm7'],
-      flat: ['Db', 'Eb', 'Gb', 'Ab', 'Bb']
+    const chords = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+    const extensions = {
+      'major': 'M7',
+      'minor': 'm7',
+      'dominant': '7',
+      'dim': 'dim7',
+      'hdim': 'm7♭5'
     };
+    const accidentals = ['♯', '♭'];
 
-    const strings = ['1st String', '2nd String', '3rd String', '4th String'];
-
-    let currentScale = 'major';
+    let mode = 'note';
+    let order = 'random';
     let paused = false;
-    let mode = 'random';
+    let intervalTime = 5000;
     let interval;
     let currentIndex = 0;
 
+    let activeTypes = {
+      major: true,
+      minor: true,
+      dominant: true,
+      dim: true,
+      hdim: true
+    };
+
+    let activeAccidentals = {
+      '♯': true,
+      '♭': true
+    };
+
     const noteDisplay = document.getElementById('noteDisplay');
     const stringLabel = document.getElementById('stringLabel');
+    const typeMenu = document.getElementById('typeMenu');
 
-    function setScale(scale) {
-      currentScale = scale;
+    function setMode(newMode) {
+      mode = newMode;
       currentIndex = 0;
+      document.getElementById('chordBtn').classList.toggle('active', mode === 'chord');
+      document.getElementById('noteBtn').classList.toggle('active', mode === 'note');
+      renderTypeMenu();
+    }
+
+    function setOrder(newOrder) {
+      order = newOrder;
+      currentIndex = 0;
+      document.querySelectorAll('.mode-menu button').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`.mode-menu button[onclick="setOrder('${newOrder}')"]`).classList.add('active');
+    }
+
+    function setIntervalTime(ms) {
+      intervalTime = ms;
+      currentIndex = 0;
+      document.querySelectorAll('.interval-menu button').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      restart();
     }
 
     function togglePause() {
       paused = !paused;
-      if (!paused) {
-        start();
-      } else {
+      if (paused) {
         clearInterval(interval);
+      } else {
+        start();
       }
     }
 
-    function toggleMode() {
-      mode = mode === 'random' ? 'sequential' : 'random';
-      currentIndex = 0;
+    function renderTypeMenu() {
+      typeMenu.innerHTML = '';
+      if (mode === 'chord') {
+        for (const type in activeTypes) {
+          const btn = document.createElement('button');
+          btn.textContent = type;
+          btn.className = activeTypes[type] ? 'active' : '';
+          btn.onclick = () => {
+            activeTypes[type] = !activeTypes[type];
+            renderTypeMenu();
+          };
+          typeMenu.appendChild(btn);
+        }
+      } else {
+        for (const acc of accidentals) {
+          const btn = document.createElement('button');
+          btn.textContent = acc;
+          btn.className = activeAccidentals[acc] ? 'active' : '';
+          btn.onclick = () => {
+            activeAccidentals[acc] = !activeAccidentals[acc];
+            renderTypeMenu();
+          };
+          typeMenu.appendChild(btn);
+        }
+      }
+    }
+
+    function getNextItem() {
+      if (mode === 'chord') {
+        const available = chords.flatMap(c => {
+          return Object.entries(extensions)
+            .filter(([t, v]) => activeTypes[t])
+            .map(([t, v]) => c + v);
+        });
+        if (order === 'sequential') return available[currentIndex++ % available.length];
+        return available[Math.floor(Math.random() * available.length)];
+      } else {
+        const baseNotes = [...chords];
+        if (activeAccidentals['♯']) baseNotes.push(...chords.map(n => n + '♯'));
+        if (activeAccidentals['♭']) baseNotes.push(...chords.map(n => n + '♭'));
+        if (order === 'sequential') return baseNotes[currentIndex++ % baseNotes.length];
+        return baseNotes[Math.floor(Math.random() * baseNotes.length)];
+      }
     }
 
     function showNote() {
       if (paused) return;
-
-      const scaleNotes = notes[currentScale];
-      let note;
-
-      if (mode === 'random') {
-        note = scaleNotes[Math.floor(Math.random() * scaleNotes.length)];
-      } else {
-        note = scaleNotes[currentIndex % scaleNotes.length];
-        currentIndex++;
-      }
-
-      const string = strings[Math.floor(Math.random() * strings.length)];
-      noteDisplay.textContent = note;
-      stringLabel.textContent = string;
+      noteDisplay.textContent = getNextItem();
+      stringLabel.textContent = '';
     }
 
     function start() {
       clearInterval(interval);
-      interval = setInterval(showNote, 2000);
+      interval = setInterval(showNote, intervalTime);
     }
 
-    document.body.addEventListener('keydown', (e) => {
+    function restart() {
+      clearInterval(interval);
+      if (!paused) start();
+    }
+
+    document.body.addEventListener('keydown', e => {
       if (e.code === 'Space') {
         e.preventDefault();
         togglePause();
       }
     });
 
+    document.body.addEventListener('click', () => {
+      if (window.innerWidth <= 600) togglePause();
+    });
+
+    renderTypeMenu();
     start();
   </script>
 </body>
