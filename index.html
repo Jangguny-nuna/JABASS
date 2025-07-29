@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>베이스 지판 정복하기</title>
+  <link href="https://fonts.googleapis.com/css2?family=DungGeunMo&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'DungGeunMo', sans-serif;
+      background-color: #111;
+      color: #fff;
+      text-align: center;
+      padding: 1em;
+    }
+    select, input, button {
+      margin: 0.3em;
+      padding: 0.5em;
+      font-size: 1em;
+      border-radius: 5px;
+      border: none;
+      font-family: 'DungGeunMo', sans-serif;
+    }
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5em;
+      margin-top: 0.3em;
+    }
+    .hidden {
+      display: none;
+    }
+    .timer {
+      font-size: 1.2em;
+      margin: 0.5em 0;
+    }
+    #quizDisplay {
+      font-family: sans-serif;
+      font-size: 22.5em;
+      margin: 0.2em 0 0.5em;
+    }
+    .bottom-controls {
+      margin-top: 0.3em;
+    }
+    #chordButtons button {
+      background-color: #3366ff;
+      color: white;
+    }
+    #accidentalButtons button, #stringRandomButton {
+      background-color: #ffcc33;
+      color: black;
+    }
+    #pauseBtn {
+      margin-top: 0.5em;
+      background-color: #666;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <h1>❤️ 베이스 지판 정복하기 🍀</h1>
+  <p style="color: #aaa;">made by PJA</p>
+  <div>
+    <select id="modeSelector">
+      <option value="code">코드 찾기</option>
+      <option value="note">지판에서 음 찾기</option>
+    </select>
+    <br />
+    제한시간(초):
+    <input type="number" id="timeLimit" value="5" min="1" max="60" />
+    <br />
+    <button id="startBtn">시작하기</button>
+    <button id="pauseBtn">⏸ / ▶️</button>
+    <div class="timer" id="timerDisplay"></div>
+  </div>
+
+  <h2 id="quizDisplay">🎸</h2>
+
+  <div class="bottom-controls">
+    <div class="button-group" id="chordButtons">
+      <button class="chord-toggle" data-type="maj">Major</button>
+      <button class="chord-toggle" data-type="min">Minor</button>
+      <button class="chord-toggle" data-type="dom">Dominant</button>
+      <button class="chord-toggle" data-type="dim">Diminished</button>
+      <button class="chord-toggle" data-type="hdim">Half-diminished</button>
+    </div>
+
+    <div class="button-group" id="accidentalButtons">
+      <button id="sharpToggle"># 포함</button>
+      <button id="flatToggle">b 포함</button>
+    </div>
+
+    <div class="button-group">
+      <button id="stringRandomButton">모든 현 랜덤</button>
+    </div>
+  </div>
+
+  <script>
+    const modeSelector = document.getElementById("modeSelector");
+    const startBtn = document.getElementById("startBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const timerDisplay = document.getElementById("timerDisplay");
+    const quizDisplay = document.getElementById("quizDisplay");
+
+    const chordButtons = document.getElementById("chordButtons");
+    const accidentalButtons = document.getElementById("accidentalButtons");
+    const stringRandomButton = document.getElementById("stringRandomButton");
+
+    const chordToggles = document.querySelectorAll(".chord-toggle");
+    const sharpToggle = document.getElementById("sharpToggle");
+    const flatToggle = document.getElementById("flatToggle");
+
+    let timer;
+    let running = false;
+    let currentTimeLeft = 0;
+    let currentMode = "code";
+
+    const chords = {
+      maj: true,
+      min: true,
+      dom: true,
+      dim: true,
+      hdim: true,
+    };
+    let includeSharp = true;
+    let includeFlat = true;
+    let stringRandom = true;
+
+    function updateVisibility(mode) {
+      currentMode = mode;
+      if (mode === "code") {
+        chordButtons.classList.remove("hidden");
+        accidentalButtons.classList.add("hidden");
+        stringRandomButton.classList.add("hidden");
+      } else {
+        chordButtons.classList.add("hidden");
+        accidentalButtons.classList.remove("hidden");
+        stringRandomButton.classList.remove("hidden");
+      }
+    }
+
+    function getRandomNote(allowSharpFlat = true) {
+      const baseNotes = ["C", "D", "E", "F", "G", "A", "B"];
+      let modifiers = [""];
+      if (allowSharpFlat) {
+        if (includeSharp) modifiers.push("#");
+        if (includeFlat) modifiers.push("b");
+      }
+      const note = baseNotes[Math.floor(Math.random() * baseNotes.length)];
+      const mod = modifiers[Math.floor(Math.random() * modifiers.length)] || "";
+      return note + mod;
+    }
+
+    function getRandomString() {
+      return Math.ceil(Math.random() * 4);
+    }
+
+    function getRandomChord() {
+      const types = Object.keys(chords).filter(k => chords[k]);
+      if (types.length === 0) return "";
+      const type = types[Math.floor(Math.random() * types.length)];
+      const root = ["C", "D", "E", "F", "G", "A", "B"][Math.floor(Math.random() * 7)];
+      const suffix = {
+        maj: "M7",
+        min: "m7",
+        dom: "7",
+        dim: "dim7",
+        hdim: "m7b5",
+      }[type];
+      return root + suffix;
+    }
+
+    function nextQuiz(mode) {
+      if (mode === "note") {
+        const note = getRandomNote(true);
+        quizDisplay.textContent = stringRandom ? `${getRandomString()}현 / ${note}` : note;
+      } else {
+        quizDisplay.textContent = getRandomChord();
+      }
+    }
+
+    function startQuiz() {
+      clearInterval(timer);
+      const mode = modeSelector.value;
+      currentMode = mode;
+      currentTimeLeft = parseInt(document.getElementById("timeLimit").value);
+      if (isNaN(currentTimeLeft) || currentTimeLeft <= 0) currentTimeLeft = 5;
+
+      nextQuiz(mode);
+      running = true;
+      timerDisplay.textContent = `⏱ ${currentTimeLeft}초 남음`;
+      timer = setInterval(() => {
+        currentTimeLeft--;
+        if (currentTimeLeft > 0) {
+          timerDisplay.textContent = `⏱ ${currentTimeLeft}초 남음`;
+        } else {
+          nextQuiz(mode);
+          currentTimeLeft = parseInt(document.getElementById("timeLimit").value);
+          timerDisplay.textContent = `⏱ ${currentTimeLeft}초 남음`;
+        }
+      }, 1000);
+    }
+
+    function togglePause() {
+      if (running) {
+        clearInterval(timer);
+        running = false;
+        timerDisplay.textContent += " ⏸";
+      } else {
+        running = true;
+        timerDisplay.textContent = `⏱ ${currentTimeLeft}초 남음`;
+        timer = setInterval(() => {
+          currentTimeLeft--;
+          if (currentTimeLeft > 0) {
+            timerDisplay.textContent = `⏱ ${currentTimeLeft}초 남음`;
+          } else {
+            nextQuiz(currentMode);
+            currentTimeLeft = parseInt(document.getElementById("timeLimit").value);
+            timerDisplay.textContent = `⏱ ${currentTimeLeft}초 남음`;
+          }
+        }, 1000);
+      }
+    }
+
+    startBtn.addEventListener("click", startQuiz);
+    pauseBtn.addEventListener("click", togglePause);
+
+    modeSelector.addEventListener("change", (e) => {
+      updateVisibility(e.target.value);
+    });
+
+    chordToggles.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const type = btn.dataset.type;
+        chords[type] = !chords[type];
+        btn.style.opacity = chords[type] ? 1 : 0.4;
+      });
+    });
+    sharpToggle.addEventListener("click", () => {
+      includeSharp = !includeSharp;
+      sharpToggle.style.opacity = includeSharp ? 1 : 0.4;
+    });
+    flatToggle.addEventListener("click", () => {
+      includeFlat = !includeFlat;
+      flatToggle.style.opacity = includeFlat ? 1 : 0.4;
+    });
+    stringRandomButton.addEventListener("click", () => {
+      stringRandom = !stringRandom;
+      stringRandomButton.style.opacity = stringRandom ? 1 : 0.4;
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        togglePause();
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      updateVisibility(modeSelector.value);
+    });
+  </script>
+</body>
+</html>
