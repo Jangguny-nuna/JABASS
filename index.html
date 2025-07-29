@@ -42,16 +42,19 @@
     }
 
     #noteDisplay {
-      font-size: 4rem;
-      margin: 2rem 0 1rem 0;
+      font-size: 2.2rem;
+      margin: 1.2rem 0 0.3rem 0;
       color: #00bfff;
+      font-family: sans-serif;
       word-break: keep-all;
+      text-align: center;
     }
 
     .string-label {
-      font-size: 1.3rem;
+      font-size: 1.1rem;
       color: #ffd700;
       margin-bottom: 0.5rem;
+      font-family: sans-serif;
     }
 
     .menu {
@@ -59,7 +62,7 @@
       flex-wrap: wrap;
       justify-content: center;
       gap: 8px;
-      margin: 1rem 0;
+      margin: 0.5rem 0;
     }
 
     .menu button, #pauseBtn, #modeBtn {
@@ -77,16 +80,16 @@
     }
 
     #pauseBtn, #modeBtn {
-      margin: 0.5rem;
+      margin: 0.3rem;
     }
 
     @media (max-width: 600px) {
       #noteDisplay {
-        font-size: 2.5rem;
+        font-size: 1.8rem;
       }
 
       .string-label {
-        font-size: 1.1rem;
+        font-size: 0.95rem;
       }
     }
   </style>
@@ -96,21 +99,21 @@
   <div id="noteDisplay">🎵</div>
   <div class="string-label" id="stringLabel"></div>
 
+  <div>
+    <button id="pauseBtn" onclick="togglePause()">⏯</button>
+    <button id="modeBtn" onclick="toggleMode()">🔀</button>
+  </div>
+
   <div class="menu">
     <button onclick="setScale('major')">Major</button>
     <button onclick="setScale('minor')">Minor</button>
     <button onclick="setScale('flat')">Flat</button>
   </div>
 
-  <div>
-    <button id="pauseBtn" onclick="togglePause()">⏯</button>
-    <button id="modeBtn" onclick="toggleMode()">🔀</button>
-  </div>
-
   <script>
     const notes = {
-      major: ['C', 'D', 'E', 'F', 'G', 'A', 'B'],
-      minor: ['Cm', 'Dm', 'Em', 'Fm', 'Gm', 'Am', 'Bm'],
+      major: ['Cmaj7', 'Dmaj7', 'Emaj7', 'Fmaj7', 'Gmaj7', 'Amaj7', 'Bmaj7'],
+      minor: ['Cm7', 'Dm7', 'Em7', 'Fm7', 'Gm7', 'Am7', 'Bm7'],
       flat: ['Db', 'Eb', 'Gb', 'Ab', 'Bb']
     };
 
@@ -118,7 +121,7 @@
 
     let currentScale = 'major';
     let paused = false;
-    let mode = 'random'; // or 'sequential'
+    let mode = 'random';
     let interval;
     let currentIndex = 0;
 
@@ -132,7 +135,11 @@
 
     function togglePause() {
       paused = !paused;
-      if (!paused) start();
+      if (!paused) {
+        start();
+      } else {
+        clearInterval(interval);
+      }
     }
 
     function toggleMode() {
