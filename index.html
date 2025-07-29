@@ -1,4 +1,4 @@
-=<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
@@ -27,33 +27,34 @@
     }
 
     h1 {
-      font-size: 1.4rem;
-      margin: 1rem 0 0.5rem;
+      font-size: 1.8rem;
+      margin: 2rem 0 1rem;
     }
 
     #noteDisplay {
-      font-size: 2rem;
-      margin: 0.8rem 0 0.2rem 0;
+      font-size: 5rem;
+      font-weight: bold;
+      margin: 0.5rem 0;
       color: #00ffff;
       font-family: sans-serif;
     }
 
     .string-label {
-      font-size: 1rem;
-      color: #ffd700;
-      margin-bottom: 0.5rem;
+      font-size: 2rem;
+      color: #00ffff;
+      font-weight: bold;
       font-family: sans-serif;
     }
 
-    .menu, .type-menu, .mode-menu, .interval-menu {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 8px;
-      margin: 0.4rem 0;
+    .timer-label {
+      font-size: 1.2rem;
+      color: #ffd700;
+      font-weight: bold;
+      font-family: sans-serif;
+      margin-bottom: 0.5rem;
     }
 
-    .menu button, .type-menu button, .mode-menu button, .interval-menu button, #pauseBtn {
+    .menu button, .type-menu button, .mode-menu button, #pauseBtn, #startBtn {
       font-family: 'DungGeunMo';
       background-color: #333;
       color: #fff;
@@ -63,189 +64,221 @@
       cursor: pointer;
     }
 
+    .menu button.active,
+    .type-menu button.active {
+      background-color: #00aaff;
+      color: #000;
+    }
+
+    .settings {
+      display: flex;
+      flex-direction: row;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+
+    input[type="number"] {
+      font-family: 'DungGeunMo';
+      width: 60px;
+      background-color: #333;
+      color: #fff;
+      border: 1px solid #777;
+      padding: 0.4rem;
+      border-radius: 6px;
+    }
+
+    select {
+      font-family: 'DungGeunMo';
+      background-color: #333;
+      color: #fff;
+      border: 1px solid #777;
+      padding: 0.4rem;
+      border-radius: 6px;
+    }
+
     button.active {
       background-color: #00aaff;
       color: #000;
     }
 
+    #pauseBtn.paused {
+      background-color: #555;
+    }
+
     @media (max-width: 600px) {
       #noteDisplay {
-        font-size: 1.6rem;
+        font-size: 2.8rem;
       }
-
       .string-label {
-        font-size: 0.9rem;
+        font-size: 1.4rem;
       }
+    }
+
+    .type-menu {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+
+    .footer {
+      font-size: 0.8rem;
+      color: #999;
+      margin-top: 2rem;
     }
   </style>
 </head>
 <body>
+  <h1 style="font-size: 1.2rem; margin-top: 1rem;">🎸</h1>
   <h1>🍀 BASS 지판 정복하기! 🍀</h1>
 
-  <div class="menu">
-    <button onclick="setMode('chord')" id="chordBtn">코드 탐색</button>
-    <button onclick="setMode('note')" id="noteBtn">음 탐색</button>
+  <div class="settings" id="settingsPanel">
+    <select onchange="setMode(this.value)" id="modeSelect">
+      <option value="chord">Chord</option>
+      <option value="note" selected>Note</option>
+    </select>
+
+    <div>
+      <button onclick="adjustInterval(-1)">◀</button>
+      <span id="intervalValue">5</span>초
+      <button onclick="adjustInterval(1)">▶</button>
+    </div>
+
+    <button id="pauseBtn" onclick="togglePause()">⏯</button>
+    <button id="startBtn" onclick="begin()">시작하기</button>
   </div>
 
-  <div id="noteDisplay">🎵</div>
   <div class="string-label" id="stringLabel"></div>
+  <div id="noteDisplay"></div>
+  <div class="timer-label" id="timerLabel"></div>
 
   <div class="type-menu" id="typeMenu"></div>
+  <div class="type-menu" id="stringMenu"></div>
+  <div class="type-menu" id="chordMenu"></div>
 
-  <div class="interval-menu">
-    <button onclick="setIntervalTime(2000)">2초</button>
-    <button onclick="setIntervalTime(3000)">3초</button>
-    <button class="active" onclick="setIntervalTime(5000)">5초</button>
-    <button onclick="setIntervalTime(7000)">7초</button>
-  </div>
-
-  <div class="mode-menu">
-    <button onclick="setOrder('sequential')">순서대로</button>
-    <button class="active" onclick="setOrder('random')">랜덤</button>
-    <button id="pauseBtn" onclick="togglePause()">⏯</button>
-  </div>
+  <div class="footer">made by. PJA 🎸</div>
 
   <script>
-    const chords = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-    const extensions = {
-      'major': 'M7',
-      'minor': 'm7',
-      'dominant': '7',
-      'dim': 'dim7',
-      'hdim': 'm7♭5'
-    };
-    const accidentals = ['♯', '♭'];
+    let intervalId;
+    let isPaused = false;
+    let intervalSec = 5;
+    let remainingTime = intervalSec;
+    let started = false;
 
-    let mode = 'note';
-    let order = 'random';
-    let paused = false;
-    let intervalTime = 5000;
-    let interval;
-    let currentIndex = 0;
+    const noteTypes = ['#', 'b'];
+    const chordTypes = ['M7', 'm7', '7', 'dim7', 'm7b5'];
 
-    let activeTypes = {
-      major: true,
-      minor: true,
-      dominant: true,
-      dim: true,
-      hdim: true
-    };
-
-    let activeAccidentals = {
-      '♯': true,
-      '♭': true
-    };
-
-    const noteDisplay = document.getElementById('noteDisplay');
-    const stringLabel = document.getElementById('stringLabel');
-    const typeMenu = document.getElementById('typeMenu');
-
-    function setMode(newMode) {
-      mode = newMode;
-      currentIndex = 0;
-      document.getElementById('chordBtn').classList.toggle('active', mode === 'chord');
-      document.getElementById('noteBtn').classList.toggle('active', mode === 'note');
-      renderTypeMenu();
-    }
-
-    function setOrder(newOrder) {
-      order = newOrder;
-      currentIndex = 0;
-      document.querySelectorAll('.mode-menu button').forEach(btn => btn.classList.remove('active'));
-      document.querySelector(`.mode-menu button[onclick="setOrder('${newOrder}')"]`).classList.add('active');
-    }
-
-    function setIntervalTime(ms) {
-      intervalTime = ms;
-      currentIndex = 0;
-      document.querySelectorAll('.interval-menu button').forEach(btn => btn.classList.remove('active'));
-      event.target.classList.add('active');
-      restart();
+    function adjustInterval(val) {
+      intervalSec = Math.max(1, intervalSec + val);
+      document.getElementById("intervalValue").textContent = intervalSec;
+      remainingTime = intervalSec;
     }
 
     function togglePause() {
-      paused = !paused;
-      if (paused) {
-        clearInterval(interval);
-      } else {
-        start();
+      isPaused = !isPaused;
+      document.getElementById("pauseBtn").classList.toggle("paused", isPaused);
+    }
+
+    function setMode(mode) {
+      renderMenus(mode);
+    }
+
+    function begin() {
+      if (!started) {
+        started = true;
+        renderMenus(document.getElementById("modeSelect").value);
+        clearInterval(intervalId);
+        showNext();
+        intervalId = setInterval(() => {
+          if (!isPaused) {
+            remainingTime--;
+            document.getElementById("timerLabel").textContent = `${remainingTime}초 남음`;
+            if (remainingTime <= 0) {
+              showNext();
+              remainingTime = intervalSec;
+            }
+          }
+        }, 1000);
       }
     }
 
-    function renderTypeMenu() {
-      typeMenu.innerHTML = '';
-      if (mode === 'chord') {
-        for (const type in activeTypes) {
+    function renderMenus(mode) {
+      document.getElementById("typeMenu").innerHTML = '';
+      document.getElementById("stringMenu").innerHTML = '';
+      document.getElementById("chordMenu").innerHTML = '';
+
+      if (mode === 'note') {
+        noteTypes.forEach(type => {
           const btn = document.createElement('button');
           btn.textContent = type;
-          btn.className = activeTypes[type] ? 'active' : '';
-          btn.onclick = () => {
-            activeTypes[type] = !activeTypes[type];
-            renderTypeMenu();
-          };
-          typeMenu.appendChild(btn);
-        }
-      } else {
-        for (const acc of accidentals) {
-          const btn = document.createElement('button');
-          btn.textContent = acc;
-          btn.className = activeAccidentals[acc] ? 'active' : '';
-          btn.onclick = () => {
-            activeAccidentals[acc] = !activeAccidentals[acc];
-            renderTypeMenu();
-          };
-          typeMenu.appendChild(btn);
-        }
-      }
-    }
-
-    function getNextItem() {
-      if (mode === 'chord') {
-        const available = chords.flatMap(c => {
-          return Object.entries(extensions)
-            .filter(([t, v]) => activeTypes[t])
-            .map(([t, v]) => c + v);
+          btn.onclick = () => btn.classList.toggle('active');
+          document.getElementById("typeMenu").appendChild(btn);
         });
-        if (order === 'sequential') return available[currentIndex++ % available.length];
-        return available[Math.floor(Math.random() * available.length)];
+
+        ['4현', '5현', '6현'].forEach(label => {
+          const btn = document.createElement('button');
+          btn.textContent = label;
+          btn.onclick = () => {
+            btn.classList.toggle('active');
+          };
+          document.getElementById("stringMenu").appendChild(btn);
+        });
+      } else if (mode === 'chord') {
+        chordTypes.forEach(type => {
+          const btn = document.createElement('button');
+          btn.textContent = type;
+          btn.classList.add('active');
+          btn.onclick = () => btn.classList.toggle('active');
+          document.getElementById("chordMenu").appendChild(btn);
+        });
+      }
+    }
+
+    function showNext() {
+      const mode = document.getElementById("modeSelect").value;
+      const baseNotes = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+      let notes = [...baseNotes];
+
+      const sharpActive = document.querySelector('#typeMenu button:nth-child(1)')?.classList.contains('active');
+      const flatActive = document.querySelector('#typeMenu button:nth-child(2)')?.classList.contains('active');
+
+      if (sharpActive && !flatActive) notes = notes.map(n => n + '#');
+      else if (!sharpActive && flatActive) notes = notes.map(n => n + 'b');
+
+      if (mode === "note") {
+        const stringBtns = Array.from(document.querySelectorAll('#stringMenu button.active'));
+        const selectedStrings = stringBtns.map(btn => btn.textContent);
+        let stringRange = [];
+
+        if (selectedStrings.includes('4현')) stringRange.push(...['1번', '2번', '3번', '4번']);
+        if (selectedStrings.includes('5현')) stringRange.push(...['1번', '2번', '3번', '4번', '5번']);
+        if (selectedStrings.includes('6현')) stringRange.push(...['1번', '2번', '3번', '4번', '5번', '6번']);
+
+        const randNote = notes[Math.floor(Math.random() * notes.length)];
+
+        if (stringRange.length === 0) {
+          document.getElementById("stringLabel").textContent = '';
+          document.getElementById("noteDisplay").textContent = `${randNote}`;
+        } else {
+          const randString = stringRange[Math.floor(Math.random() * stringRange.length)];
+          const stringNum = randString.split(' ')[0];
+          document.getElementById("noteDisplay").textContent = `${stringNum}, ${randNote}`;
+          document.getElementById("stringLabel").textContent = '';
+        }
       } else {
-        const baseNotes = [...chords];
-        if (activeAccidentals['♯']) baseNotes.push(...chords.map(n => n + '♯'));
-        if (activeAccidentals['♭']) baseNotes.push(...chords.map(n => n + '♭'));
-        if (order === 'sequential') return baseNotes[currentIndex++ % baseNotes.length];
-        return baseNotes[Math.floor(Math.random() * baseNotes.length)];
+        const activeTypes = Array.from(document.querySelectorAll('#chordMenu button.active')).map(b => b.textContent);
+        if (activeTypes.length === 0) return;
+        const randChord = baseNotes[Math.floor(Math.random() * baseNotes.length)];
+        const randType = activeTypes[Math.floor(Math.random() * activeTypes.length)];
+        const displayChord = randChord + randType;
+        document.getElementById("noteDisplay").textContent = displayChord;
+        document.getElementById("stringLabel").textContent = '';
       }
+      document.getElementById("timerLabel").textContent = `${intervalSec}초 남음`;
     }
-
-    function showNote() {
-      if (paused) return;
-      noteDisplay.textContent = getNextItem();
-      stringLabel.textContent = '';
-    }
-
-    function start() {
-      clearInterval(interval);
-      interval = setInterval(showNote, intervalTime);
-    }
-
-    function restart() {
-      clearInterval(interval);
-      if (!paused) start();
-    }
-
-    document.body.addEventListener('keydown', e => {
-      if (e.code === 'Space') {
-        e.preventDefault();
-        togglePause();
-      }
-    });
-
-    document.body.addEventListener('click', () => {
-      if (window.innerWidth <= 600) togglePause();
-    });
-
-    renderTypeMenu();
-    start();
   </script>
 </body>
 </html>
