@@ -151,7 +151,7 @@
 </head>
 <body>
   <h1 style="font-size: 1.2rem; margin-top: 1rem;">🎸</h1>
-  <h1>🍀 BASS 지판 정복하기! 🍀</h1>
+  <h1>🍀BASS 지판 정복하기!🍀</h1>
 
   <div class="settings" id="settingsPanel">
     <select onchange="setMode(this.value)" id="modeSelect">
@@ -236,14 +236,19 @@
           document.getElementById("typeMenu").appendChild(btn);
         });
 
-        ['4현', '5현', '6현'].forEach(label => {
-          const btn = document.createElement('button');
-          btn.textContent = label;
-          btn.onclick = () => {
-            btn.classList.toggle('active');
-          };
-          document.getElementById("stringMenu").appendChild(btn);
-        });
+      ['4현', '5현', '6현'].forEach(label => {
+  const btn = document.createElement('button');
+  btn.textContent = label;
+  btn.onclick = () => {
+    // 모든 버튼에서 'active' 제거
+    document.querySelectorAll('#stringMenu button').forEach(b => b.classList.remove('active'));
+    
+    // 클릭한 버튼만 'active' 적용
+    btn.classList.add('active');
+  };
+  document.getElementById("stringMenu").appendChild(btn);
+});
+
       } else if (mode === 'chord') {
         chordTypes.forEach(type => {
           const btn = document.createElement('button');
