@@ -129,6 +129,24 @@
       color: #999;
       margin-top: 2rem;
     }
+.menu-btn {
+  font-family: 'DungGeunMo';
+  background-color: #333;
+  color: #fff;
+  border: 1px solid #777;
+  padding: 0.4rem 0.7rem;
+  border-radius: 6px;
+  cursor: pointer;
+  height: 2.2rem;          /* 버튼 높이 통일 */
+  line-height: 1.2rem;     /* 텍스트 세로 정렬 보정 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.menu-btn:hover {
+  background-color: #00aaff;
+  color: #000;
+}
   </style>
 </head>
 <body>
@@ -142,9 +160,9 @@
     </select>
 
     <div>
-      <button onclick="adjustInterval(-1)">◀</button>
-      <span id="intervalValue">5</span>초
-      <button onclick="adjustInterval(1)">▶</button>
+    <button class="menu-btn" onclick="adjustInterval(-1)">-</button>
+<span id="intervalValue">5</span>초
+<button class="menu-btn" onclick="adjustInterval(1)">+</button>
     </div>
 
     <button id="pauseBtn" onclick="togglePause()">⏯</button>
