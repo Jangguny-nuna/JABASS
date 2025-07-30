@@ -245,8 +245,11 @@
       const sharpActive = document.querySelector('#typeMenu button:nth-child(1)')?.classList.contains('active');
       const flatActive = document.querySelector('#typeMenu button:nth-child(2)')?.classList.contains('active');
 
-      if (sharpActive && !flatActive) notes = notes.map(n => n + '#');
-      else if (!sharpActive && flatActive) notes = notes.map(n => n + 'b');
+      baseNotes.forEach(n => {
+        notes.push(n);               
+        if (sharpActive) notes.push(n + '#'); 
+        if (flatActive) notes.push(n + 'b'); 
+      });
 
       if (mode === "note") {
         const stringBtns = Array.from(document.querySelectorAll('#stringMenu button.active'));
