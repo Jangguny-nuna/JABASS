@@ -5,22 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Boom Boom Bass</title>
   <style>
-  @font-face {
-  font-family: 'DungGeunMo';
-  src: 
-    url('./fonts/DungGeunMo.woff2') format('woff2'),
-    url('./fonts/DungGeunMo.woff') format('woff'),
-    url('./fonts/DungGeunMo.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-}
+    @font-face {
+      font-family: 'DungGeunMo';
+      src: url('./fonts/DungGeunMo.woff2') format('woff2'),
+           url('./fonts/DungGeunMo.woff') format('woff'),
+           url('./fonts/DungGeunMo.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'HakgyoansimAllimjangTTF-B';
+      src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/2408-5@1.0/HakgyoansimAllimjangTTF-B.woff2') format('woff2');
+      font-weight: 700;
+      font-style: normal;
+    }
 
-@font-face {
-  font-family: 'HakgyoansimAllimjangTTF-B';
-  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/2408-5@1.0/HakgyoansimAllimjangTTF-B.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-}
     body {
       background-color: #000;
       color: #fff;
@@ -30,7 +29,6 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start;
       min-height: 100vh;
       text-align: center;
     }
@@ -40,13 +38,13 @@
       margin: 2rem 0 1rem;
     }
 
-   #noteDisplay {
-  font-size: 5rem;
-  font-weight: bold;
-  margin: 0.5rem 0;
-  color: #00ffff;
-  font-family: 'HakgyoansimAllimjangTTF-B', sans-serif;
-}
+    #noteDisplay {
+      font-size: 5rem;
+      font-weight: bold;
+      margin: 0.5rem 0;
+      color: #00ffff;
+      font-family: 'HakgyoansimAllimjangTTF-B', sans-serif;
+    }
 
     .string-label {
       font-size: 2rem;
@@ -59,7 +57,6 @@
       font-size: 1.2rem;
       color: #ffd700;
       font-weight: bold;
-      font-family: sans-serif;
       margin-bottom: 0.5rem;
     }
 
@@ -81,48 +78,23 @@
 
     .settings {
       display: flex;
-      flex-direction: row;
       gap: 10px;
       flex-wrap: wrap;
       justify-content: center;
       margin-bottom: 1rem;
     }
 
-    input[type="number"] {
-      font-family: 'DungGeunMo';
-      width: 60px;
-      background-color: #333;
-      color: #fff;
-      border: 1px solid #777;
-      padding: 0.4rem;
-      border-radius: 6px;
-    }
-
-    select {
+    input[type="number"], select {
       font-family: 'DungGeunMo';
       background-color: #333;
       color: #fff;
       border: 1px solid #777;
       padding: 0.4rem;
       border-radius: 6px;
-    }
-
-    button.active {
-      background-color: #00aaff;
-      color: #000;
     }
 
     #pauseBtn.paused {
       background-color: #555;
-    }
-
-    @media (max-width: 600px) {
-      #noteDisplay {
-        font-size: 2.8rem;
-      }
-      .string-label {
-        font-size: 1.4rem;
-      }
     }
 
     .type-menu {
@@ -138,64 +110,23 @@
       color: #999;
       margin-top: 2rem;
     }
-.menu-btn {
-  font-family: 'DungGeunMo';
-  background-color: #333;
-  color: #fff;
-  border: 1px solid #777;
-  padding: 0.4rem 0.7rem;
-  border-radius: 6px;
-  cursor: pointer;
-  height: 2.2rem;          /* 버튼 높이 통일 */
-  line-height: 1.2rem;     /* 텍스트 세로 정렬 보정 */
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-.menu-btn:hover {
-  background-color: #00aaff;
-  color: #000;
-}
-.ascii-cat {
-  font-family: 'DungGeunMo';
-  font-size: 20px;        /* 폰트 살짝 줄이기 (선택) */
-  color: #FFFFFF;
-  white-space: pre;
-  text-align: center;
-  margin: -10px 0 +8px;  /* 위아래 여백 조정 */
-  line-height: 1;         /* 줄 간격도 압축 */
-}
 
-.disappear {
-  animation: softShrinkOut 0.5s ease-in-out forwards;
-}
+    .ascii-cat {
+      font-family: 'DungGeunMo';
+      font-size: 20px;
+      color: #FFFFFF;
+      white-space: pre;
+      text-align: center;
+      margin: -10px 0 -30px;
+      line-height: 1;
+      display: block;
+      transition: transform 0.5s ease, opacity 0.5s ease;
+    }
 
-@keyframes softShrinkOut {
-  0% {
-    transform: scale(1);
-    border-radius: 0%;
-    opacity: 1;
-  }
-  100% {
-    transform: scale(0);
-    border-radius: 100%;
-    opacity: 0;
-  }
-.hidden {
-  display: none;
-}
-
-.next-screen {
-  opacity: 0;
-  transition: opacity 0.5s ease-in;
-}
-
-.next-screen.show {
-  opacity: 1;
-  display: block;
-}
-
-
+    .disappear {
+      transform: scale(0);
+      opacity: 0;
+    }
   </style>
 </head>
 <body>
@@ -209,9 +140,9 @@
     </select>
 
     <div>
-    <button class="menu-btn" onclick="adjustInterval(-1)">-</button>
-<span id="intervalValue">5</span>초
-<button class="menu-btn" onclick="adjustInterval(1)">+</button>
+      <button class="menu-btn" onclick="adjustInterval(-1)">-</button>
+      <span id="intervalValue">10</span>초
+      <button class="menu-btn" onclick="adjustInterval(1)">+</button>
     </div>
 
     <button id="pauseBtn" onclick="togglePause()">||</button>
@@ -221,31 +152,29 @@
   <div class="string-label" id="stringLabel"></div>
   <div id="noteDisplay"></div>
   <div class="timer-label" id="timerLabel"></div>
-
   <div class="type-menu" id="typeMenu"></div>
   <div class="type-menu" id="stringMenu"></div>
   <div class="type-menu" id="chordMenu"></div>
 
-<div class="ascii-wrapper">
-  <pre class="ascii-cat">
-   _______
-   /       \
-   | PLAY!! |
-    \_______/ 
-       \   
-        /\_/\  
-       ( o.o ) 
-      > ^ <
-  </pre>
+  <div class="ascii-wrapper">
+    <div class="ascii-cat">
+       _______
+       /       \
+       | PLAY!! |
+        \_______/ 
+           \   
+            /\_/\  
+           ( o.o ) 
+          > ^ <
+    </div>
   </div>
-
 
   <div class="footer">made by. PJA 🎸</div>
 
   <script>
     let intervalId;
     let isPaused = false;
-    let intervalSec = 5;
+    let intervalSec = 10;
     let remainingTime = intervalSec;
     let started = false;
 
@@ -259,54 +188,58 @@
     }
 
     function togglePause() {
-  isPaused = !isPaused;
-  document.getElementById("pauseBtn").classList.toggle("paused", isPaused);
-  document.getElementById("pauseBtn").textContent = isPaused ? "▶" : "||";
-}
+      isPaused = !isPaused;
+      document.getElementById("pauseBtn").classList.toggle("paused", isPaused);
+      document.getElementById("pauseBtn").textContent = isPaused ? "▶" : "||";
+    }
 
     function setMode(mode) {
       renderMenus(mode);
     }
 
- function begin() {
-  if (!started) {
-    started = true;
+    function begin() {
+      if (!started) {
+        started = true;
 
-    // 고양이 사라지기
-    const catBox = document.querySelector('.ascii-cat');
-    if (catBox) {
-      catBox.classList.add('disappear');
-      setTimeout(() => {
-        catBox.style.display = 'none';
-      }, 500);
-    }
+        const catBox = document.querySelector('.ascii-cat');
+        const startBtn = document.getElementById('startBtn');
 
-    // 버튼 텍스트를 "패스하기"로 변경 + 기능 전환
-    const startBtn = document.getElementById('startBtn');
-    startBtn.textContent = '패스하기';
-    startBtn.onclick = showNext;
-
-    // 0.5초 후 기존 기능 실행
-    setTimeout(() => {
-      renderMenus(document.getElementById("modeSelect").value);
-      clearInterval(intervalId);
-      showNext();
-      intervalId = setInterval(() => {
-        if (!isPaused) {
-          remainingTime--;
-          document.getElementById("timerLabel").textContent = `${remainingTime}초 남음`;
-          if (remainingTime <= 0) {
-            showNext();
-            remainingTime = intervalSec;
-          }
+        if (catBox) {
+          catBox.classList.add('disappear');
+          void catBox.offsetWidth;
+          setTimeout(() => {
+            catBox.style.display = 'none';
+          }, 500);
         }
-      }, 1000);
-    }, 500);
-  }
-}
 
+        startBtn.textContent = '패스하기';
+        const newStartBtn = startBtn.cloneNode(true);
+        startBtn.parentNode.replaceChild(newStartBtn, startBtn);
+        newStartBtn.addEventListener('click', showNext);
 
+        document.addEventListener('keydown', function(e) {
+          if (e.code === 'Enter' && started) {
+            showNext();
+          }
+        });
 
+        setTimeout(() => {
+          renderMenus(document.getElementById("modeSelect").value);
+          clearInterval(intervalId);
+          showNext();
+          intervalId = setInterval(() => {
+            if (!isPaused) {
+              remainingTime--;
+              document.getElementById("timerLabel").textContent = `${remainingTime}초 남음`;
+              if (remainingTime <= 0) {
+                showNext();
+                remainingTime = intervalSec;
+              }
+            }
+          }, 1000);
+        }, 500);
+      }
+    }
 
     function renderMenus(mode) {
       document.getElementById("typeMenu").innerHTML = '';
@@ -321,18 +254,15 @@
           document.getElementById("typeMenu").appendChild(btn);
         });
 
-      ['4현', '5현', '6현'].forEach(label => {
-  const btn = document.createElement('button');
-  btn.textContent = label;
-  btn.onclick = () => {
-    // 모든 버튼에서 'active' 제거
-    document.querySelectorAll('#stringMenu button').forEach(b => b.classList.remove('active'));
-    
-    // 클릭한 버튼만 'active' 적용
-    btn.classList.add('active');
-  };
-  document.getElementById("stringMenu").appendChild(btn);
-});
+        ['4현', '5현', '6현'].forEach(label => {
+          const btn = document.createElement('button');
+          btn.textContent = label;
+          btn.onclick = () => {
+            document.querySelectorAll('#stringMenu button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+          };
+          document.getElementById("stringMenu").appendChild(btn);
+        });
 
       } else if (mode === 'chord') {
         chordTypes.forEach(type => {
@@ -354,9 +284,9 @@
       const flatActive = document.querySelector('#typeMenu button:nth-child(2)')?.classList.contains('active');
 
       baseNotes.forEach(n => {
-        notes.push(n);               
-        if (sharpActive) notes.push(n + '#'); 
-        if (flatActive) notes.push(n + '♭'); 
+        notes.push(n);
+        if (sharpActive) notes.push(n + '#');
+        if (flatActive) notes.push(n + '♭');
       });
 
       if (mode === "note") {
@@ -375,42 +305,21 @@
           document.getElementById("noteDisplay").textContent = `${randNote}`;
         } else {
           const randString = stringRange[Math.floor(Math.random() * stringRange.length)];
-          const stringNum = randString.split(' ')[0];
-          document.getElementById("noteDisplay").textContent = `${stringNum}, ${randNote}`;
+          document.getElementById("noteDisplay").textContent = `${randString}, ${randNote}`;
           document.getElementById("stringLabel").textContent = '';
         }
+
       } else {
         const activeTypes = Array.from(document.querySelectorAll('#chordMenu button.active')).map(b => b.textContent);
         if (activeTypes.length === 0) return;
         const randChord = baseNotes[Math.floor(Math.random() * baseNotes.length)];
         const randType = activeTypes[Math.floor(Math.random() * activeTypes.length)];
-        const displayChord = randChord + randType;
-        document.getElementById("noteDisplay").textContent = displayChord;
+        document.getElementById("noteDisplay").textContent = randChord + randType;
         document.getElementById("stringLabel").textContent = '';
       }
+
       document.getElementById("timerLabel").textContent = `${intervalSec}초 남음`;
     }
-
-document.addEventListener('keydown', function(e) {
-  // 스페이스바(공백키) 감지
-  if (e.code === 'Space') {
-    // 버튼 클릭과 동일하게 togglePause 실행
-    togglePause();
-    // 스크롤 등 기본 동작 방지
-    e.preventDefault();
-  }
-document.addEventListener('keydown', function(e) {
-  if (e.code === 'Space') {
-    togglePause();
-    e.preventDefault();
-  }
-
-  // 시작 후 Enter 키 누르면 패스 기능
-  if (e.code === 'Enter' && started) {
-    showNext();
-  }
-});
-});
   </script>
 </body>
 </html>
