@@ -155,7 +155,7 @@
 
   <div class="settings" id="settingsPanel">
     <select onchange="setMode(this.value)" id="modeSelect">
-      <option value="chord">Chord</option>
+      <option value="chord">7th Chord</option>
       <option value="note" selected>Note</option>
     </select>
 
@@ -165,7 +165,7 @@
 <button class="menu-btn" onclick="adjustInterval(1)">+</button>
     </div>
 
-    <button id="pauseBtn" onclick="togglePause()">⏯</button>
+    <button id="pauseBtn" onclick="togglePause()">||</button>
     <button id="startBtn" onclick="begin()">시작하기</button>
   </div>
 
@@ -176,6 +176,9 @@
   <div class="type-menu" id="typeMenu"></div>
   <div class="type-menu" id="stringMenu"></div>
   <div class="type-menu" id="chordMenu"></div>
+
+
+
 
   <div class="footer">made by. PJA 🎸</div>
 
@@ -196,9 +199,10 @@
     }
 
     function togglePause() {
-      isPaused = !isPaused;
-      document.getElementById("pauseBtn").classList.toggle("paused", isPaused);
-    }
+  isPaused = !isPaused;
+  document.getElementById("pauseBtn").classList.toggle("paused", isPaused);
+  document.getElementById("pauseBtn").textContent = isPaused ? "▶" : "||";
+}
 
     function setMode(mode) {
       renderMenus(mode);
@@ -305,6 +309,16 @@
       }
       document.getElementById("timerLabel").textContent = `${intervalSec}초 남음`;
     }
+
+document.addEventListener('keydown', function(e) {
+  // 스페이스바(공백키) 감지
+  if (e.code === 'Space') {
+    // 버튼 클릭과 동일하게 togglePause 실행
+    togglePause();
+    // 스크롤 등 기본 동작 방지
+    e.preventDefault();
+  }
+});
   </script>
 </body>
 </html>
