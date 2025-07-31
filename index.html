@@ -158,12 +158,44 @@
 }
 .ascii-cat {
   font-family: 'DungGeunMo';
-  font-size: 24px;
+  font-size: 20px;        /* 폰트 살짝 줄이기 (선택) */
   color: #FFFFFF;
   white-space: pre;
   text-align: center;
-  margin-top: -20px;
+  margin: -10px 0 +8px;  /* 위아래 여백 조정 */
+  line-height: 1;         /* 줄 간격도 압축 */
 }
+
+.disappear {
+  animation: softShrinkOut 0.5s ease-in-out forwards;
+}
+
+@keyframes softShrinkOut {
+  0% {
+    transform: scale(1);
+    border-radius: 0%;
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0);
+    border-radius: 100%;
+    opacity: 0;
+  }
+.hidden {
+  display: none;
+}
+
+.next-screen {
+  opacity: 0;
+  transition: opacity 0.5s ease-in;
+}
+
+.next-screen.show {
+  opacity: 1;
+  display: block;
+}
+
+
   </style>
 </head>
 <body>
@@ -236,24 +268,45 @@
       renderMenus(mode);
     }
 
-    function begin() {
-      if (!started) {
-        started = true;
-        renderMenus(document.getElementById("modeSelect").value);
-        clearInterval(intervalId);
-        showNext();
-        intervalId = setInterval(() => {
-          if (!isPaused) {
-            remainingTime--;
-            document.getElementById("timerLabel").textContent = `${remainingTime}초 남음`;
-            if (remainingTime <= 0) {
-              showNext();
-              remainingTime = intervalSec;
-            }
-          }
-        }, 1000);
-      }
+ function begin() {
+  if (!started) {
+    started = true;
+
+    // 고양이 사라지기
+    const catBox = document.querySelector('.ascii-cat');
+    if (catBox) {
+      catBox.classList.add('disappear');
+      setTimeout(() => {
+        catBox.style.display = 'none';
+      }, 500);
     }
+
+    // 버튼 텍스트를 "패스하기"로 변경 + 기능 전환
+    const startBtn = document.getElementById('startBtn');
+    startBtn.textContent = '패스하기';
+    startBtn.onclick = showNext;
+
+    // 0.5초 후 기존 기능 실행
+    setTimeout(() => {
+      renderMenus(document.getElementById("modeSelect").value);
+      clearInterval(intervalId);
+      showNext();
+      intervalId = setInterval(() => {
+        if (!isPaused) {
+          remainingTime--;
+          document.getElementById("timerLabel").textContent = `${remainingTime}초 남음`;
+          if (remainingTime <= 0) {
+            showNext();
+            remainingTime = intervalSec;
+          }
+        }
+      }, 1000);
+    }, 500);
+  }
+}
+
+
+
 
     function renderMenus(mode) {
       document.getElementById("typeMenu").innerHTML = '';
@@ -346,6 +399,17 @@ document.addEventListener('keydown', function(e) {
     // 스크롤 등 기본 동작 방지
     e.preventDefault();
   }
+document.addEventListener('keydown', function(e) {
+  if (e.code === 'Space') {
+    togglePause();
+    e.preventDefault();
+  }
+
+  // 시작 후 Enter 키 누르면 패스 기능
+  if (e.code === 'Enter' && started) {
+    showNext();
+  }
+});
 });
   </script>
 </body>
