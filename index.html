@@ -110,6 +110,15 @@
       color: #999;
       margin-top: 2rem;
     }
+.menu-btn {
+  font-family: 'DungGeunMo';
+  background-color: #333;
+  color: #fff;
+  border: 1px solid #777;
+  padding: 0.4rem 0.7rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
 
     .ascii-cat {
       font-family: 'DungGeunMo';
@@ -127,6 +136,21 @@
       transform: scale(0);
       opacity: 0;
     }
+#pauseBtn,
+#startBtn,
+.menu-btn {
+  font-family: 'DungGeunMo';
+  background-color: #333;
+  color: #fff;
+  border: 1px solid #777;
+  padding: 0.4rem 0.7rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  height: 2.2rem; /* 🔥 고정 높이 */
+  line-height: 1.2;
+  box-sizing: border-box;
+}
+
   </style>
 </head>
 <body>
@@ -190,7 +214,7 @@
     function togglePause() {
       isPaused = !isPaused;
       document.getElementById("pauseBtn").classList.toggle("paused", isPaused);
-      document.getElementById("pauseBtn").textContent = isPaused ? "▷" : "||";
+      document.getElementById("pauseBtn").textContent = isPaused ? "⏵" : "||";
     }
 
     function setMode(mode) {
