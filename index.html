@@ -140,9 +140,9 @@
     </select>
 
     <div>
-      <button class="menu-btn" onclick="adjustInterval(-1)">-</button>
+      <button class="menu-btn" onclick="adjustInterval(-1)">－</button>
       <span id="intervalValue">10</span>초
-      <button class="menu-btn" onclick="adjustInterval(1)">+</button>
+      <button class="menu-btn" onclick="adjustInterval(1)">＋</button>
     </div>
 
     <button id="pauseBtn" onclick="togglePause()">||</button>
@@ -190,7 +190,7 @@
     function togglePause() {
       isPaused = !isPaused;
       document.getElementById("pauseBtn").classList.toggle("paused", isPaused);
-      document.getElementById("pauseBtn").textContent = isPaused ? "▶" : "||";
+      document.getElementById("pauseBtn").textContent = isPaused ? "▸" : "||";
     }
 
     function setMode(mode) {
