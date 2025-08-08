@@ -121,22 +121,26 @@
   cursor: pointer;
 }
 
-    .ascii-cat {
-      font-family: 'DungGeunMo';
-      font-size: 20px;
-      color: #FFFFFF;
-      white-space: pre;
-      text-align: center;
-      margin: -10px 0 -30px;
-      line-height: 1;
-      display: block;
-      transition: transform 0.5s ease, opacity 0.5s ease;
-    }
+  :root {
+  --cat-shift: -80px; /* 음수 = 위로, 양수 = 아래로 */
+}
 
-    .disappear {
-      transform: scale(0);
-      opacity: 0;
-    }
+.ascii-cat {
+  font-family: 'DungGeunMo';
+  font-size: 20px;
+  color: #FFFFFF;
+  white-space: pre;
+  text-align: center;
+  line-height: 1;
+  display: block;
+  transform: translateY(var(--cat-shift)) scale(1);
+  transition: transform 0.5s ease, opacity 0.5s ease;
+}
+
+.disappear {
+  transform: translateY(var(--cat-shift)) scale(0);
+  opacity: 0;
+}
 #pauseBtn,
 #startBtn,
 .menu-btn {
@@ -155,7 +159,7 @@
   </style>
 </head>
 <body>
-  <h1 style="font-size: 1.2rem; margin-top: 1rem;">🎸</h1>
+  <h1 id="resetBtn" style="font-size: 1.2rem; margin-top: 1rem;">🎸</h1>
   <h1>🍀BASS 지판 정복하기!🍀</h1>
 
   <div class="settings" id="settingsPanel">
@@ -195,7 +199,6 @@
   </div>
 
   <div class="footer">made by. PJA 🎸</div>
-
 <script>
   let intervalId;
   let isPaused = false;
@@ -206,16 +209,23 @@
   const noteTypes = ['#', '♭'];
   const chordTypes = ['M7', 'm7', '7', 'dim7', 'm7♭5'];
 
+  // 초기가동: 리셋 버튼 연결
+  window.addEventListener('DOMContentLoaded', () => {
+    const resetH1 = document.getElementById('resetBtn');
+    if (resetH1) resetH1.addEventListener('click', resetGame);
+  });
+
   function adjustInterval(val) {
     intervalSec = Math.max(1, intervalSec + val);
     document.getElementById("intervalValue").textContent = intervalSec;
-    remainingTime = intervalSec;
+    remainingTime = intervalSec; // 설정 변경 시 기준 업데이트
   }
 
   function togglePause() {
     isPaused = !isPaused;
-    document.getElementById("pauseBtn").classList.toggle("paused", isPaused);
-    document.getElementById("pauseBtn").textContent = isPaused ? "⏵" : "||";
+    const btn = document.getElementById("pauseBtn");
+    btn.classList.toggle("paused", isPaused);
+    btn.textContent = isPaused ? "⏵" : "||";
   }
 
   function setMode(mode) {
@@ -223,53 +233,122 @@
   }
 
   function begin() {
-    if (!started) {
-      started = true;
+    if (started) return;
+    started = true;
 
-      const catBox = document.querySelector('.ascii-cat');
-      const startBtn = document.getElementById('startBtn');
+    const catBox = document.querySelector('.ascii-cat');
+    const startBtn = document.getElementById('startBtn');
 
-      if (catBox) {
-        catBox.classList.add('disappear');
-        void catBox.offsetWidth;
-        setTimeout(() => {
-          catBox.style.display = 'none';
-        }, 500);
-      }
+    // 고양이 퇴장 애니메이션
+    if (catBox) {
+      catBox.classList.add('disappear');
+      void catBox.offsetWidth;
+      setTimeout(() => { catBox.style.display = 'none'; }, 500);
+    }
 
-      startBtn.textContent = '패스하기';
-      const newStartBtn = startBtn.cloneNode(true);
-      startBtn.parentNode.replaceChild(newStartBtn, startBtn);
+    // '시작하기' → '패스하기'로 교체 (id 유지)
+    startBtn.textContent = '패스하기';
+    const newStartBtn = startBtn.cloneNode(true);
+    newStartBtn.id = 'startBtn';
+    startBtn.parentNode.replaceChild(newStartBtn, startBtn);
 
-      // 🔥 패스 버튼 클릭 시 타이머 초기화 추가
-      newStartBtn.addEventListener('click', () => {
+    // 패스: 타이머 리셋 후 다음 문제
+    newStartBtn.addEventListener('click', () => {
+      remainingTime = intervalSec;
+      showNext();
+      newStartBtn.blur(); // 스페이스가 클릭으로 오인되는 거 방지
+    });
+    // 버튼 포커스 상태의 스페이스 기본동작 막기
+    newStartBtn.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' || e.key === ' ') e.preventDefault();
+    });
+    newStartBtn.addEventListener('keyup', (e) => {
+      if (e.code === 'Space' || e.key === ' ') e.preventDefault();
+    });
+
+    // 전역 단축키: Enter=패스, Space=일시정지/재생
+    document.addEventListener('keydown', function(e) {
+      const tag = (e.target.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+
+      if (e.code === 'Enter' && started) {
         remainingTime = intervalSec;
         showNext();
-      });
+        return;
+      }
 
-      // 🔥 엔터키 패스 시 타이머 초기화 추가
-      document.addEventListener('keydown', function(e) {
-        if (e.code === 'Enter' && started) {
-          remainingTime = intervalSec;
-          showNext();
-        }
-      });
+      if (e.code === 'Space' || e.key === ' ') {
+        e.preventDefault(); // 스크롤/버튼클릭 방지
+        togglePause();
+      }
+    });
 
-      setTimeout(() => {
-        renderMenus(document.getElementById("modeSelect").value);
-        clearInterval(intervalId);
-        showNext();
-        intervalId = setInterval(() => {
-          if (!isPaused) {
-            remainingTime--;
-            document.getElementById("timerLabel").textContent = `${remainingTime}초 남음`;
-            if (remainingTime <= 0) {
-              showNext();
-              remainingTime = intervalSec;
-            }
+    // 최초 렌더 + 타이머 시작
+    setTimeout(() => {
+      renderMenus(document.getElementById("modeSelect").value);
+      clearInterval(intervalId);
+      remainingTime = intervalSec;
+      showNext();
+      intervalId = setInterval(() => {
+        if (!isPaused) {
+          remainingTime--;
+          document.getElementById("timerLabel").textContent = `${remainingTime}초 남음`;
+          if (remainingTime <= 0) {
+            showNext();
+            remainingTime = intervalSec;
           }
-        }, 1000);
-      }, 500);
+        }
+      }, 1000);
+    }, 500);
+  }
+
+  // 🎸 누르면 완전 초기화
+  function resetGame() {
+    // 타이머 종료/상태 초기화
+    clearInterval(intervalId);
+    isPaused = false;
+    started = false;
+    remainingTime = intervalSec;
+
+    // UI 초기화
+    document.getElementById("noteDisplay").textContent = '';
+    document.getElementById("stringLabel").textContent = '';
+    document.getElementById("timerLabel").textContent = '';
+
+    // 메뉴/버튼 초기화
+    document.getElementById("typeMenu").innerHTML = '';
+    document.getElementById("stringMenu").innerHTML = '';
+    document.getElementById("chordMenu").innerHTML = '';
+
+    // 모드 셀렉트 기본값(원하면 유지해도 됨)
+    const modeSel = document.getElementById("modeSelect");
+    if (modeSel) modeSel.value = 'note';
+
+    // 시작 버튼 원복: 새 노드로 갈아끼우고 begin 연결
+    const curStart = document.getElementById('startBtn');
+    if (curStart) {
+      const freshStart = curStart.cloneNode(true);
+      freshStart.id = 'startBtn';
+      freshStart.textContent = '시작하기';
+      curStart.parentNode.replaceChild(freshStart, curStart);
+      freshStart.addEventListener('click', begin);
+    }
+
+    // 일시정지 버튼 표시 원복
+    const pauseBtn = document.getElementById("pauseBtn");
+    if (pauseBtn) {
+      pauseBtn.classList.remove('paused');
+      pauseBtn.textContent = "||";
+      pauseBtn.blur();
+    }
+
+    // 고양이 다시 등장
+    const catBox = document.querySelector('.ascii-cat');
+    if (catBox) {
+      catBox.style.display = 'block';
+      catBox.classList.remove('disappear');
+      // 등장 애니메이션 살짝 리셋하고 싶으면 아래 주석 해제
+      // void catBox.offsetWidth;
     }
   }
 
@@ -279,6 +358,7 @@
     document.getElementById("chordMenu").innerHTML = '';
 
     if (mode === 'note') {
+      // # / ♭ 토글
       noteTypes.forEach(type => {
         const btn = document.createElement('button');
         btn.textContent = type;
@@ -286,6 +366,7 @@
         document.getElementById("typeMenu").appendChild(btn);
       });
 
+      // 현 수 선택 (단일 선택)
       ['4현', '5현', '6현'].forEach(label => {
         const btn = document.createElement('button');
         btn.textContent = label;
@@ -300,7 +381,7 @@
       chordTypes.forEach(type => {
         const btn = document.createElement('button');
         btn.textContent = type;
-        btn.classList.add('active');
+        btn.classList.add('active'); // 기본 활성
         btn.onclick = () => btn.classList.toggle('active');
         document.getElementById("chordMenu").appendChild(btn);
       });
@@ -315,6 +396,7 @@
     const sharpActive = document.querySelector('#typeMenu button:nth-child(1)')?.classList.contains('active');
     const flatActive = document.querySelector('#typeMenu button:nth-child(2)')?.classList.contains('active');
 
+    // 중복 없이 확장
     baseNotes.forEach(n => {
       if (sharpActive) notes.push(n + '#');
       if (flatActive) notes.push(n + '♭');
@@ -349,7 +431,8 @@
       document.getElementById("stringLabel").textContent = '';
     }
 
-    document.getElementById("timerLabel").textContent = `${intervalSec}초 남음`;
+    // 현재 남은 시간 기준으로 라벨 표기
+    document.getElementById("timerLabel").textContent = `${remainingTime}초 남음`;
   }
 </script>
 </body>
