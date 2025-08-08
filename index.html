@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -195,155 +196,161 @@
 
   <div class="footer">made by. PJA 🎸</div>
 
-  <script>
-    let intervalId;
-    let isPaused = false;
-    let intervalSec = 10;
-    let remainingTime = intervalSec;
-    let started = false;
+<script>
+  let intervalId;
+  let isPaused = false;
+  let intervalSec = 10;
+  let remainingTime = intervalSec;
+  let started = false;
 
-    const noteTypes = ['#', '♭'];
-    const chordTypes = ['M7', 'm7', '7', 'dim7', 'm7♭5'];
+  const noteTypes = ['#', '♭'];
+  const chordTypes = ['M7', 'm7', '7', 'dim7', 'm7♭5'];
 
-    function adjustInterval(val) {
-      intervalSec = Math.max(1, intervalSec + val);
-      document.getElementById("intervalValue").textContent = intervalSec;
-      remainingTime = intervalSec;
-    }
+  function adjustInterval(val) {
+    intervalSec = Math.max(1, intervalSec + val);
+    document.getElementById("intervalValue").textContent = intervalSec;
+    remainingTime = intervalSec;
+  }
 
-    function togglePause() {
-      isPaused = !isPaused;
-      document.getElementById("pauseBtn").classList.toggle("paused", isPaused);
-      document.getElementById("pauseBtn").textContent = isPaused ? "⏵" : "||";
-    }
+  function togglePause() {
+    isPaused = !isPaused;
+    document.getElementById("pauseBtn").classList.toggle("paused", isPaused);
+    document.getElementById("pauseBtn").textContent = isPaused ? "⏵" : "||";
+  }
 
-    function setMode(mode) {
-      renderMenus(mode);
-    }
+  function setMode(mode) {
+    renderMenus(mode);
+  }
 
-    function begin() {
-      if (!started) {
-        started = true;
+  function begin() {
+    if (!started) {
+      started = true;
 
-        const catBox = document.querySelector('.ascii-cat');
-        const startBtn = document.getElementById('startBtn');
+      const catBox = document.querySelector('.ascii-cat');
+      const startBtn = document.getElementById('startBtn');
 
-        if (catBox) {
-          catBox.classList.add('disappear');
-          void catBox.offsetWidth;
-          setTimeout(() => {
-            catBox.style.display = 'none';
-          }, 500);
-        }
-
-        startBtn.textContent = '패스하기';
-        const newStartBtn = startBtn.cloneNode(true);
-        startBtn.parentNode.replaceChild(newStartBtn, startBtn);
-        newStartBtn.addEventListener('click', showNext);
-
-        document.addEventListener('keydown', function(e) {
-          if (e.code === 'Enter' && started) {
-            showNext();
-          }
-        });
-
+      if (catBox) {
+        catBox.classList.add('disappear');
+        void catBox.offsetWidth;
         setTimeout(() => {
-          renderMenus(document.getElementById("modeSelect").value);
-          clearInterval(intervalId);
-          showNext();
-          intervalId = setInterval(() => {
-            if (!isPaused) {
-              remainingTime--;
-              document.getElementById("timerLabel").textContent = `${remainingTime}초 남음`;
-              if (remainingTime <= 0) {
-                showNext();
-                remainingTime = intervalSec;
-              }
-            }
-          }, 1000);
+          catBox.style.display = 'none';
         }, 500);
       }
-    }
 
-    function renderMenus(mode) {
-      document.getElementById("typeMenu").innerHTML = '';
-      document.getElementById("stringMenu").innerHTML = '';
-      document.getElementById("chordMenu").innerHTML = '';
+      startBtn.textContent = '패스하기';
+      const newStartBtn = startBtn.cloneNode(true);
+      startBtn.parentNode.replaceChild(newStartBtn, startBtn);
 
-      if (mode === 'note') {
-        noteTypes.forEach(type => {
-          const btn = document.createElement('button');
-          btn.textContent = type;
-          btn.onclick = () => btn.classList.toggle('active');
-          document.getElementById("typeMenu").appendChild(btn);
-        });
-
-        ['4현', '5현', '6현'].forEach(label => {
-          const btn = document.createElement('button');
-          btn.textContent = label;
-          btn.onclick = () => {
-            document.querySelectorAll('#stringMenu button').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-          };
-          document.getElementById("stringMenu").appendChild(btn);
-        });
-
-      } else if (mode === 'chord') {
-        chordTypes.forEach(type => {
-          const btn = document.createElement('button');
-          btn.textContent = type;
-          btn.classList.add('active');
-          btn.onclick = () => btn.classList.toggle('active');
-          document.getElementById("chordMenu").appendChild(btn);
-        });
-      }
-    }
-
-    function showNext() {
-      const mode = document.getElementById("modeSelect").value;
-      const baseNotes = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-      let notes = [...baseNotes];
-
-      const sharpActive = document.querySelector('#typeMenu button:nth-child(1)')?.classList.contains('active');
-      const flatActive = document.querySelector('#typeMenu button:nth-child(2)')?.classList.contains('active');
-
-      baseNotes.forEach(n => {
-        notes.push(n);
-        if (sharpActive) notes.push(n + '#');
-        if (flatActive) notes.push(n + '♭');
+      // 🔥 패스 버튼 클릭 시 타이머 초기화 추가
+      newStartBtn.addEventListener('click', () => {
+        remainingTime = intervalSec;
+        showNext();
       });
 
-      if (mode === "note") {
-        const stringBtns = Array.from(document.querySelectorAll('#stringMenu button.active'));
-        const selectedStrings = stringBtns.map(btn => btn.textContent);
-        let stringRange = [];
-
-        if (selectedStrings.includes('4현')) stringRange.push(...['1번', '2번', '3번', '4번']);
-        if (selectedStrings.includes('5현')) stringRange.push(...['1번', '2번', '3번', '4번', '5번']);
-        if (selectedStrings.includes('6현')) stringRange.push(...['1번', '2번', '3번', '4번', '5번', '6번']);
-
-        const randNote = notes[Math.floor(Math.random() * notes.length)];
-
-        if (stringRange.length === 0) {
-          document.getElementById("stringLabel").textContent = '';
-          document.getElementById("noteDisplay").textContent = `${randNote}`;
-        } else {
-          const randString = stringRange[Math.floor(Math.random() * stringRange.length)];
-          document.getElementById("noteDisplay").textContent = `${randString}, ${randNote}`;
-          document.getElementById("stringLabel").textContent = '';
+      // 🔥 엔터키 패스 시 타이머 초기화 추가
+      document.addEventListener('keydown', function(e) {
+        if (e.code === 'Enter' && started) {
+          remainingTime = intervalSec;
+          showNext();
         }
+      });
 
+      setTimeout(() => {
+        renderMenus(document.getElementById("modeSelect").value);
+        clearInterval(intervalId);
+        showNext();
+        intervalId = setInterval(() => {
+          if (!isPaused) {
+            remainingTime--;
+            document.getElementById("timerLabel").textContent = `${remainingTime}초 남음`;
+            if (remainingTime <= 0) {
+              showNext();
+              remainingTime = intervalSec;
+            }
+          }
+        }, 1000);
+      }, 500);
+    }
+  }
+
+  function renderMenus(mode) {
+    document.getElementById("typeMenu").innerHTML = '';
+    document.getElementById("stringMenu").innerHTML = '';
+    document.getElementById("chordMenu").innerHTML = '';
+
+    if (mode === 'note') {
+      noteTypes.forEach(type => {
+        const btn = document.createElement('button');
+        btn.textContent = type;
+        btn.onclick = () => btn.classList.toggle('active');
+        document.getElementById("typeMenu").appendChild(btn);
+      });
+
+      ['4현', '5현', '6현'].forEach(label => {
+        const btn = document.createElement('button');
+        btn.textContent = label;
+        btn.onclick = () => {
+          document.querySelectorAll('#stringMenu button').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+        };
+        document.getElementById("stringMenu").appendChild(btn);
+      });
+
+    } else if (mode === 'chord') {
+      chordTypes.forEach(type => {
+        const btn = document.createElement('button');
+        btn.textContent = type;
+        btn.classList.add('active');
+        btn.onclick = () => btn.classList.toggle('active');
+        document.getElementById("chordMenu").appendChild(btn);
+      });
+    }
+  }
+
+  function showNext() {
+    const mode = document.getElementById("modeSelect").value;
+    const baseNotes = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+    let notes = [...baseNotes];
+
+    const sharpActive = document.querySelector('#typeMenu button:nth-child(1)')?.classList.contains('active');
+    const flatActive = document.querySelector('#typeMenu button:nth-child(2)')?.classList.contains('active');
+
+    baseNotes.forEach(n => {
+      if (sharpActive) notes.push(n + '#');
+      if (flatActive) notes.push(n + '♭');
+    });
+
+    if (mode === "note") {
+      const stringBtns = Array.from(document.querySelectorAll('#stringMenu button.active'));
+      const selectedStrings = stringBtns.map(btn => btn.textContent);
+      let stringRange = [];
+
+      if (selectedStrings.includes('4현')) stringRange.push(...['1번', '2번', '3번', '4번']);
+      if (selectedStrings.includes('5현')) stringRange.push(...['1번', '2번', '3번', '4번', '5번']);
+      if (selectedStrings.includes('6현')) stringRange.push(...['1번', '2번', '3번', '4번', '5번', '6번']);
+
+      const randNote = notes[Math.floor(Math.random() * notes.length)];
+
+      if (stringRange.length === 0) {
+        document.getElementById("stringLabel").textContent = '';
+        document.getElementById("noteDisplay").textContent = `${randNote}`;
       } else {
-        const activeTypes = Array.from(document.querySelectorAll('#chordMenu button.active')).map(b => b.textContent);
-        if (activeTypes.length === 0) return;
-        const randChord = baseNotes[Math.floor(Math.random() * baseNotes.length)];
-        const randType = activeTypes[Math.floor(Math.random() * activeTypes.length)];
-        document.getElementById("noteDisplay").textContent = randChord + randType;
+        const randString = stringRange[Math.floor(Math.random() * stringRange.length)];
+        document.getElementById("noteDisplay").textContent = `${randString}, ${randNote}`;
         document.getElementById("stringLabel").textContent = '';
       }
 
-      document.getElementById("timerLabel").textContent = `${intervalSec}초 남음`;
+    } else {
+      const activeTypes = Array.from(document.querySelectorAll('#chordMenu button.active')).map(b => b.textContent);
+      if (activeTypes.length === 0) return;
+      const randChord = baseNotes[Math.floor(Math.random() * baseNotes.length)];
+      const randType = activeTypes[Math.floor(Math.random() * activeTypes.length)];
+      document.getElementById("noteDisplay").textContent = randChord + randType;
+      document.getElementById("stringLabel").textContent = '';
     }
-  </script>
+
+    document.getElementById("timerLabel").textContent = `${intervalSec}초 남음`;
+  }
+</script>
 </body>
 </html>
