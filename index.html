@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -61,7 +60,7 @@
       margin-bottom: 0.5rem;
     }
 
-    .menu button, .type-menu button, .mode-menu button, #pauseBtn, #startBtn {
+    .menu button, .type-menu button, #pauseBtn, #startBtn {
       font-family: 'DungGeunMo';
       background-color: #333;
       color: #fff;
@@ -85,12 +84,21 @@
       margin-bottom: 1rem;
     }
 
+    .settings select,
+    .settings input[type="number"] {
+      height: 2.2rem;
+      line-height: 2.2rem;
+      font-size: 1rem;
+      box-sizing: border-box;
+      padding: 0 0.4rem;
+      text-align: center;
+    }
+
     input[type="number"], select {
       font-family: 'DungGeunMo';
       background-color: #333;
       color: #fff;
       border: 1px solid #777;
-      padding: 0.4rem;
       border-radius: 6px;
     }
 
@@ -111,78 +119,84 @@
       color: #999;
       margin-top: 2rem;
     }
-.menu-btn {
-  font-family: 'DungGeunMo';
-  background-color: #333;
-  color: #fff;
-  border: 1px solid #777;
-  padding: 0.4rem 0.7rem;
-  border-radius: 6px;
-  cursor: pointer;
-}
 
-  :root {
-  --cat-shift: -80px; /* 음수 = 위로, 양수 = 아래로 */
-}
+    :root {
+      --cat-shift: -80px;
+    }
 
-.ascii-cat {
-  font-family: 'DungGeunMo';
-  font-size: 20px;
-  color: #FFFFFF;
-  white-space: pre;
-  text-align: center;
-  line-height: 1;
-  display: block;
-  transform: translateY(var(--cat-shift)) scale(1);
-  transition: transform 0.5s ease, opacity 0.5s ease;
-}
+    .ascii-cat {
+      font-family: 'DungGeunMo';
+      font-size: 20px;
+      color: #FFFFFF;
+      white-space: pre;
+      text-align: center;
+      line-height: 1;
+      display: block;
+      transform: translateY(var(--cat-shift)) scale(1);
+      transition: transform 0.5s ease, opacity 0.5s ease;
+    }
 
-.disappear {
-  transform: translateY(var(--cat-shift)) scale(0);
-  opacity: 0;
-}
-#pauseBtn,
-#startBtn,
-.menu-btn {
-  font-family: 'DungGeunMo';
-  background-color: #333;
-  color: #fff;
-  border: 1px solid #777;
-  padding: 0.4rem 0.7rem;
-  border-radius: 6px;
-  font-size: 1rem;
-  height: 2.2rem; /* 🔥 고정 높이 */
-  line-height: 1.2;
-  box-sizing: border-box;
-}
+    .disappear {
+      transform: translateY(var(--cat-shift)) scale(0);
+      opacity: 0;
+    }
 
+    #pauseBtn,
+    #startBtn {
+      font-family: 'DungGeunMo';
+      background-color: #333;
+      color: #fff;
+      border: 1px solid #777;
+      border-radius: 6px;
+      font-size: 1rem;
+      height: 2.2rem;
+      line-height: 1.2;
+      box-sizing: border-box;
+    }
+
+    #secInput { width: 60px; }
+    #bpmInput { width: 80px; }
   </style>
 </head>
 <body>
   <h1 id="resetBtn" style="font-size: 1.2rem; margin-top: 1rem;">🎸</h1>
   <h1>🍀BASS 지판 정복하기!🍀</h1>
 
+  <!-- Settings -->
   <div class="settings" id="settingsPanel">
     <select onchange="setMode(this.value)" id="modeSelect">
       <option value="chord">7th Chord</option>
       <option value="note" selected>Note</option>
     </select>
 
-    <div>
-      <button class="menu-btn" onclick="adjustInterval(-1)">-</button>
-      <span id="intervalValue">10</span>초
-      <button class="menu-btn" onclick="adjustInterval(1)">+</button>
+    <select id="timingModeSelect" onchange="setTimingMode(this.value)" style="width:70px;">
+      <option value="sec" selected>초</option>
+      <option value="bpm">BPM</option>
+    </select>
+
+    <div id="secControls">
+      <input type="number" id="secInput" value="10" min="1" max="120" step="1"
+             inputmode="numeric" pattern="[0-9]*" oninput="onSecChanged()">
     </div>
 
-    <button id="pauseBtn" onclick="togglePause()">||</button>
-    <button id="startBtn" onclick="begin()">시작하기</button>
+    <div id="bpmControls" style="display:none; gap:8px; align-items:center;">
+      <input type="number" id="bpmInput" value="60" min="20" max="300" step="1"
+             inputmode="numeric" pattern="[0-9]*" oninput="onBPMChanged()">
+      <span>BPM</span>
+      <span id="bpmPreview" style="align-self:center;">≈ 8박 → 8.0초</span>
+    </div>
+
+    <button id="pauseBtn">||</button>
+    <button id="startBtn">시작하기</button>
   </div>
 
   <div class="string-label" id="stringLabel"></div>
   <div id="noteDisplay"></div>
   <div class="timer-label" id="timerLabel"></div>
+
+  <!-- 메뉴 영역 -->
   <div class="type-menu" id="typeMenu"></div>
-  <div class="type-menu" id="stringMenu"></div>
+  <div class="type-menu" id="numberMenu"></div>
   <div class="type-menu" id="chordMenu"></div>
 
   <div class="ascii-wrapper">
@@ -199,96 +213,59 @@
   </div>
 
   <div class="footer">made by. PJA 🎸</div>
-<script>
-  let intervalId;
-  let isPaused = false;
-  let intervalSec = 10;
-  let remainingTime = intervalSec;
-  let started = false;
 
-  const noteTypes = ['#', '♭'];
-  const chordTypes = ['M7', 'm7', '7', 'dim7', 'm7♭5'];
+  <script>
+    let intervalId;
+    let isPaused = false;
+    let intervalSec = 10;
+    let remainingTime = intervalSec;
+    let started = false;
+    const noteTypes = ['#', '♭'];
+    const chordTypes = ['M7', 'm7', '7', 'dim7', 'm7♭5'];
 
-  // 초기가동: 리셋 버튼 연결
-  window.addEventListener('DOMContentLoaded', () => {
-    const resetH1 = document.getElementById('resetBtn');
-    if (resetH1) resetH1.addEventListener('click', resetGame);
-  });
-
-  function adjustInterval(val) {
-    intervalSec = Math.max(1, intervalSec + val);
-    document.getElementById("intervalValue").textContent = intervalSec;
-    remainingTime = intervalSec; // 설정 변경 시 기준 업데이트
-  }
-
-  function togglePause() {
-    isPaused = !isPaused;
-    const btn = document.getElementById("pauseBtn");
-    btn.classList.toggle("paused", isPaused);
-    btn.textContent = isPaused ? "⏵" : "||";
-  }
-
-  function setMode(mode) {
-    renderMenus(mode);
-  }
-
-  function begin() {
-    if (started) return;
-    started = true;
-
-    const catBox = document.querySelector('.ascii-cat');
-    const startBtn = document.getElementById('startBtn');
-
-    // 고양이 퇴장 애니메이션
-    if (catBox) {
-      catBox.classList.add('disappear');
-      void catBox.offsetWidth;
-      setTimeout(() => { catBox.style.display = 'none'; }, 500);
+    function onSecChanged() {
+      intervalSec = Math.max(1, parseInt(document.getElementById("secInput").value,10) || 1);
+      remainingTime = intervalSec;
+    }
+    function onBPMChanged() {
+      let bpm = parseInt(document.getElementById("bpmInput").value,10) || 60;
+      document.getElementById("bpmPreview").textContent = `≈ 8박 → ${(8*60/bpm).toFixed(1)}초`;
     }
 
-    // '시작하기' → '패스하기'로 교체 (id 유지)
-    startBtn.textContent = '패스하기';
-    const newStartBtn = startBtn.cloneNode(true);
-    newStartBtn.id = 'startBtn';
-    startBtn.parentNode.replaceChild(newStartBtn, startBtn);
+    function togglePause() {
+      isPaused = !isPaused;
+      const btn = document.getElementById("pauseBtn");
+      btn.classList.toggle("paused", isPaused);
+      btn.textContent = isPaused ? "⏵" : "||";
+    }
 
-    // 패스: 타이머 리셋 후 다음 문제
-    newStartBtn.addEventListener('click', () => {
-      remainingTime = intervalSec;
-      showNext();
-      newStartBtn.blur(); // 스페이스가 클릭으로 오인되는 거 방지
-    });
-    // 버튼 포커스 상태의 스페이스 기본동작 막기
-    newStartBtn.addEventListener('keydown', (e) => {
-      if (e.code === 'Space' || e.key === ' ') e.preventDefault();
-    });
-    newStartBtn.addEventListener('keyup', (e) => {
-      if (e.code === 'Space' || e.key === ' ') e.preventDefault();
-    });
+    function setMode(mode) {
+      if (!started) return;
+      renderMenus(mode);
+    }
 
-    // 전역 단축키: Enter=패스, Space=일시정지/재생
-    document.addEventListener('keydown', function(e) {
-      const tag = (e.target.tagName || '').toLowerCase();
-      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+    function begin() {
+      if (started) return;
+      started = true;
 
-      if (e.code === 'Enter' && started) {
+      // 고양이 퇴장
+      const catBox = document.querySelector('.ascii-cat');
+      if (catBox) {
+        catBox.classList.add('disappear');
+        setTimeout(() => { catBox.style.display = 'none'; }, 500);
+      }
+
+      const startBtn = document.getElementById("startBtn");
+      startBtn.textContent = "패스하기";
+      startBtn.removeEventListener("click", begin);
+      startBtn.addEventListener("click", () => {
         remainingTime = intervalSec;
         showNext();
-        return;
-      }
+      });
 
-      if (e.code === 'Space' || e.key === ' ') {
-        e.preventDefault(); // 스크롤/버튼클릭 방지
-        togglePause();
-      }
-    });
-
-    // 최초 렌더 + 타이머 시작
-    setTimeout(() => {
       renderMenus(document.getElementById("modeSelect").value);
-      clearInterval(intervalId);
-      remainingTime = intervalSec;
       showNext();
+
       intervalId = setInterval(() => {
         if (!isPaused) {
           remainingTime--;
@@ -299,141 +276,96 @@
           }
         }
       }, 1000);
-    }, 500);
-  }
-
-  // 🎸 누르면 완전 초기화
-  function resetGame() {
-    // 타이머 종료/상태 초기화
-    clearInterval(intervalId);
-    isPaused = false;
-    started = false;
-    remainingTime = intervalSec;
-
-    // UI 초기화
-    document.getElementById("noteDisplay").textContent = '';
-    document.getElementById("stringLabel").textContent = '';
-    document.getElementById("timerLabel").textContent = '';
-
-    // 메뉴/버튼 초기화
-    document.getElementById("typeMenu").innerHTML = '';
-    document.getElementById("stringMenu").innerHTML = '';
-    document.getElementById("chordMenu").innerHTML = '';
-
-    // 모드 셀렉트 기본값(원하면 유지해도 됨)
-    const modeSel = document.getElementById("modeSelect");
-    if (modeSel) modeSel.value = 'note';
-
-    // 시작 버튼 원복: 새 노드로 갈아끼우고 begin 연결
-    const curStart = document.getElementById('startBtn');
-    if (curStart) {
-      const freshStart = curStart.cloneNode(true);
-      freshStart.id = 'startBtn';
-      freshStart.textContent = '시작하기';
-      curStart.parentNode.replaceChild(freshStart, curStart);
-      freshStart.addEventListener('click', begin);
     }
 
-    // 일시정지 버튼 표시 원복
-    const pauseBtn = document.getElementById("pauseBtn");
-    if (pauseBtn) {
-      pauseBtn.classList.remove('paused');
-      pauseBtn.textContent = "||";
-      pauseBtn.blur();
-    }
+    // 단축키
+    document.addEventListener('keydown', (e) => {
+      const tag = (e.target.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
 
-    // 고양이 다시 등장
-    const catBox = document.querySelector('.ascii-cat');
-    if (catBox) {
-      catBox.style.display = 'block';
-      catBox.classList.remove('disappear');
-      // 등장 애니메이션 살짝 리셋하고 싶으면 아래 주석 해제
-      // void catBox.offsetWidth;
-    }
-  }
-
-  function renderMenus(mode) {
-    document.getElementById("typeMenu").innerHTML = '';
-    document.getElementById("stringMenu").innerHTML = '';
-    document.getElementById("chordMenu").innerHTML = '';
-
-    if (mode === 'note') {
-      // # / ♭ 토글
-      noteTypes.forEach(type => {
-        const btn = document.createElement('button');
-        btn.textContent = type;
-        btn.onclick = () => btn.classList.toggle('active');
-        document.getElementById("typeMenu").appendChild(btn);
-      });
-
-      // 현 수 선택 (단일 선택)
-      ['4현', '5현', '6현'].forEach(label => {
-        const btn = document.createElement('button');
-        btn.textContent = label;
-        btn.onclick = () => {
-          document.querySelectorAll('#stringMenu button').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-        };
-        document.getElementById("stringMenu").appendChild(btn);
-      });
-
-    } else if (mode === 'chord') {
-      chordTypes.forEach(type => {
-        const btn = document.createElement('button');
-        btn.textContent = type;
-        btn.classList.add('active'); // 기본 활성
-        btn.onclick = () => btn.classList.toggle('active');
-        document.getElementById("chordMenu").appendChild(btn);
-      });
-    }
-  }
-
-  function showNext() {
-    const mode = document.getElementById("modeSelect").value;
-    const baseNotes = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-    let notes = [...baseNotes];
-
-    const sharpActive = document.querySelector('#typeMenu button:nth-child(1)')?.classList.contains('active');
-    const flatActive = document.querySelector('#typeMenu button:nth-child(2)')?.classList.contains('active');
-
-    // 중복 없이 확장
-    baseNotes.forEach(n => {
-      if (sharpActive) notes.push(n + '#');
-      if (flatActive) notes.push(n + '♭');
+      if (e.code === 'Enter' && started) {
+        e.preventDefault();
+        remainingTime = intervalSec;
+        showNext();
+      }
+      if (e.code === 'Space' || e.key === ' ') {
+        e.preventDefault();
+        togglePause();
+      }
     });
 
-    if (mode === "note") {
-      const stringBtns = Array.from(document.querySelectorAll('#stringMenu button.active'));
-      const selectedStrings = stringBtns.map(btn => btn.textContent);
-      let stringRange = [];
+    function renderMenus(mode) {
+      document.getElementById("typeMenu").innerHTML = '';
+      document.getElementById("numberMenu").innerHTML = '';
+      document.getElementById("chordMenu").innerHTML = '';
 
-      if (selectedStrings.includes('4현')) stringRange.push(...['1번', '2번', '3번', '4번']);
-      if (selectedStrings.includes('5현')) stringRange.push(...['1번', '2번', '3번', '4번', '5번']);
-      if (selectedStrings.includes('6현')) stringRange.push(...['1번', '2번', '3번', '4번', '5번', '6번']);
+      if (mode === 'note') {
+        // ♯ / ♭
+        noteTypes.forEach(type => {
+          const btn = document.createElement('button');
+          btn.textContent = type;
+          btn.onclick = () => btn.classList.toggle('active');
+          document.getElementById("typeMenu").appendChild(btn);
+        });
 
-      const randNote = notes[Math.floor(Math.random() * notes.length)];
+        // 1~6번 번호
+        for (let i=1;i<=6;i++){
+          const btn = document.createElement('button');
+          btn.textContent = i+"번";
+          btn.onclick = () => btn.classList.toggle('active');
+          document.getElementById("numberMenu").appendChild(btn);
+        }
 
-      if (stringRange.length === 0) {
-        document.getElementById("stringLabel").textContent = '';
-        document.getElementById("noteDisplay").textContent = `${randNote}`;
-      } else {
-        const randString = stringRange[Math.floor(Math.random() * stringRange.length)];
-        document.getElementById("noteDisplay").textContent = `${randString}, ${randNote}`;
-        document.getElementById("stringLabel").textContent = '';
+      } else if (mode === 'chord') {
+        chordTypes.forEach(type => {
+          const btn = document.createElement('button');
+          btn.textContent = type;
+          btn.classList.add('active');
+          btn.onclick = () => btn.classList.toggle('active');
+          document.getElementById("chordMenu").appendChild(btn);
+        });
       }
-
-    } else {
-      const activeTypes = Array.from(document.querySelectorAll('#chordMenu button.active')).map(b => b.textContent);
-      if (activeTypes.length === 0) return;
-      const randChord = baseNotes[Math.floor(Math.random() * baseNotes.length)];
-      const randType = activeTypes[Math.floor(Math.random() * activeTypes.length)];
-      document.getElementById("noteDisplay").textContent = randChord + randType;
-      document.getElementById("stringLabel").textContent = '';
     }
 
-    // 현재 남은 시간 기준으로 라벨 표기
-    document.getElementById("timerLabel").textContent = `${remainingTime}초 남음`;
-  }
-</script>
+    function showNext() {
+      const mode = document.getElementById("modeSelect").value;
+      const baseNotes = ['C','D','E','F','G','A','B'];
+      let notes = [...baseNotes];
+
+      const sharpActive = document.querySelector('#typeMenu button:nth-child(1)')?.classList.contains('active');
+      const flatActive = document.querySelector('#typeMenu button:nth-child(2)')?.classList.contains('active');
+      baseNotes.forEach(n=>{
+        if (sharpActive) notes.push(n+'#');
+        if (flatActive) notes.push(n+'♭');
+      });
+
+      if (mode === "note") {
+        const activeNums = Array.from(document.querySelectorAll('#numberMenu button.active')).map(b=>b.textContent);
+        if (activeNums.length === 0) {
+          document.getElementById("noteDisplay").textContent = notes[Math.floor(Math.random()*notes.length)];
+        } else {
+          const randNum = activeNums[Math.floor(Math.random()*activeNums.length)];
+          const randNote = notes[Math.floor(Math.random()*notes.length)];
+          document.getElementById("noteDisplay").textContent = `${randNum} ${randNote}`;
+        }
+      } else {
+        const activeTypes = Array.from(document.querySelectorAll('#chordMenu button.active')).map(b=>b.textContent);
+        if (activeTypes.length === 0) return;
+        const randChord = baseNotes[Math.floor(Math.random()*baseNotes.length)];
+        const randType = activeTypes[Math.floor(Math.random()*activeTypes.length)];
+        document.getElementById("noteDisplay").textContent = randChord+randType;
+      }
+
+      document.getElementById("timerLabel").textContent = `${remainingTime}초 남음`;
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById("resetBtn").addEventListener("click", () => location.reload());
+      document.getElementById("startBtn").addEventListener("click", begin);
+      document.getElementById("pauseBtn").addEventListener("click", togglePause);
+      onBPMChanged();
+    });
+  </script>
 </body>
 </html>
+17
