@@ -54,7 +54,7 @@
     }
 
     .timer-label {
-      font-size: 1.2rem;
+      font-size: 1.5rem;
       color: #ffd700;
       font-weight: bold;
       margin-bottom: 0.5rem;
@@ -216,16 +216,33 @@
 
   <script>
     let intervalId;
+    let bpmIntervalId;
     let isPaused = false;
     let intervalSec = 10;
     let remainingTime = intervalSec;
     let started = false;
+    let beatCount = 0;
+
     const noteTypes = ['#', '♭'];
     const chordTypes = ['M7', 'm7', '7', 'dim7', 'm7♭5'];
 
+    // 하나의 AudioContext 재사용
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playBeep(high=false) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(high ? 1200 : 880, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.1);
+    }
+
     function onSecChanged() {
       intervalSec = Math.max(1, parseInt(document.getElementById("secInput").value,10) || 1);
-      remainingTime = intervalSec;
+      remainingTime = intervalSec + 1; // 항상 GO! 포함
     }
     function onBPMChanged() {
       let bpm = parseInt(document.getElementById("bpmInput").value,10) || 60;
@@ -244,11 +261,37 @@
       renderMenus(mode);
     }
 
+    function setTimingMode(value) {
+      clearInterval(intervalId);
+      clearInterval(bpmIntervalId);
+
+      if (value === "bpm") {
+        document.getElementById("secControls").style.display = "none";
+        document.getElementById("bpmControls").style.display = "flex";
+
+        if (started) {
+          const bpm = parseInt(document.getElementById("bpmInput").value, 10) || 60;
+          beatCount = 0;
+          showNext();
+          startBPM(bpm);
+        }
+
+      } else {
+        document.getElementById("secControls").style.display = "block";
+        document.getElementById("bpmControls").style.display = "none";
+
+        if (started) {
+          remainingTime = intervalSec + 1; // GO! 포함
+          showNext();
+          startSecTimer();
+        }
+      }
+    }
+
     function begin() {
       if (started) return;
       started = true;
 
-      // 고양이 퇴장
       const catBox = document.querySelector('.ascii-cat');
       if (catBox) {
         catBox.classList.add('disappear');
@@ -259,23 +302,84 @@
       startBtn.textContent = "패스하기";
       startBtn.removeEventListener("click", begin);
       startBtn.addEventListener("click", () => {
-        remainingTime = intervalSec;
-        showNext();
+        if (document.getElementById("timingModeSelect").value === "bpm") {
+          clearInterval(bpmIntervalId);
+          const bpm = parseInt(document.getElementById("bpmInput").value, 10) || 60;
+          beatCount = 0;
+          showNext();
+          startBPM(bpm);
+        } else {
+          clearInterval(intervalId);
+          remainingTime = intervalSec + 1;
+          showNext();
+          startSecTimer();
+        }
       });
 
       renderMenus(document.getElementById("modeSelect").value);
-      showNext();
 
-      intervalId = setInterval(() => {
+      if (document.getElementById("timingModeSelect").value === "bpm") {
+        const bpm = parseInt(document.getElementById("bpmInput").value, 10) || 60;
+        startBPM(bpm);
+      } else {
+        remainingTime = intervalSec + 1;
+        showNext();
+        startSecTimer();
+      }
+    }
+
+    // 초 모드 타이머
+function startSecTimer() {
+  clearInterval(intervalId);
+  remainingTime = intervalSec; // 딱 입력한 값부터 시작
+
+  // 사이클 시작 → 새 문제 + GO!
+  showNext();
+  document.getElementById("timerLabel").textContent = "GO!";
+  playBeep(true);
+
+  intervalId = setInterval(() => {
+    if (!isPaused) {
+      if (remainingTime > 0) {
+        document.getElementById("timerLabel").textContent = `${remainingTime}초 남음`;
+        playBeep(false);
+        remainingTime--;
+      } else {
+        // 0 되면 → 다음 사이클 다시 시작
+        showNext();
+        document.getElementById("timerLabel").textContent = "GO!";
+        playBeep(true);
+        remainingTime = intervalSec; // 리셋
+      }
+    }
+  }, 1000);
+}
+
+
+
+    // BPM 모드
+    function startBPM(bpm) {
+      clearInterval(bpmIntervalId);
+      beatCount = 0;
+      const interval = (60 / bpm) * 1000;
+
+      bpmIntervalId = setInterval(() => {
         if (!isPaused) {
-          remainingTime--;
-          document.getElementById("timerLabel").textContent = `${remainingTime}초 남음`;
-          if (remainingTime <= 0) {
+          beatCount++;
+          playBeep(beatCount === 1);
+
+          if (beatCount === 1) {
             showNext();
-            remainingTime = intervalSec;
+            document.getElementById("timerLabel").textContent = "GO!";
+          } else if (beatCount >= 2 && beatCount <= 9) {
+            document.getElementById("timerLabel").textContent = `${beatCount - 1}/8`;
+          }
+
+          if (beatCount >= 9) {
+            beatCount = 0;
           }
         }
-      }, 1000);
+      }, interval);
     }
 
     // 단축키
@@ -285,8 +389,18 @@
 
       if (e.code === 'Enter' && started) {
         e.preventDefault();
-        remainingTime = intervalSec;
-        showNext();
+        if (document.getElementById("timingModeSelect").value === "bpm") {
+          clearInterval(bpmIntervalId);
+          const bpm = parseInt(document.getElementById("bpmInput").value, 10) || 60;
+          beatCount = 0;
+          showNext();
+          startBPM(bpm);
+        } else {
+          clearInterval(intervalId);
+          remainingTime = intervalSec + 1;
+          showNext();
+          startSecTimer();
+        }
       }
       if (e.code === 'Space' || e.key === ' ') {
         e.preventDefault();
@@ -300,7 +414,6 @@
       document.getElementById("chordMenu").innerHTML = '';
 
       if (mode === 'note') {
-        // ♯ / ♭
         noteTypes.forEach(type => {
           const btn = document.createElement('button');
           btn.textContent = type;
@@ -308,7 +421,6 @@
           document.getElementById("typeMenu").appendChild(btn);
         });
 
-        // 1~6번 번호
         for (let i=1;i<=6;i++){
           const btn = document.createElement('button');
           btn.textContent = i+"번";
@@ -355,8 +467,6 @@
         const randType = activeTypes[Math.floor(Math.random()*activeTypes.length)];
         document.getElementById("noteDisplay").textContent = randChord+randType;
       }
-
-      document.getElementById("timerLabel").textContent = `${remainingTime}초 남음`;
     }
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -368,4 +478,3 @@
   </script>
 </body>
 </html>
-17
